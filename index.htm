@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Code Cleaner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            height: 100vh;
+        }
+
+        h1 {
+            margin: 20px 0;
+        }
+
+        .editor-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        #code-input,
+        #code-output {
+            width: 80%;
+            margin-bottom: 8px;
+            margin-top: 8px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 768px) {
+            .editor-container {
+                width: 100%;
+            }
+
+            .button-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button {
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>HTML Code Cleaner</h1>
+    <div class="editor-container">
+        <div class="button-container">
+            <button id="clean-button" hidden>Clean Code</button>
+            <button id="minify-button">Minify Code</button>
+            <button id="remove-unused-functions-button">Remove Unused Functions</button>
+            <button id="remove-unused-css-button">Remove Unused CSS</button>
+            
+        </div>
+        <textarea id="code-input">
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Document</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                    }
+                    .unused {
+                        color: red;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Hello, World!</h1>
+                <script>
+                    console.log('Hello, World!');
+                    // Working example: This function is in use
+                    function keepMe() {
+                        alert('This function should be kept');
+                    }
+                    keepMe()
+                    // This function will be excluded
+                    function removeMe() {
+                    alert("Remove Me")
+                    }
+                </script>
+            </body>
+            </html>
+        </textarea>
+        <textarea id="code-output" readonly></textarea>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.0/beautify-html.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.0/beautify-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.0/beautify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script>
+        // Initialize CodeMirror editors
+        var inputEditor = CodeMirror.fromTextArea(document.getElementById('code-input'), {
+            mode: 'htmlmixed',
+            theme: 'dracula',
+            lineNumbers: true,
+            lineWrapping: true
+        });
+
+        var outputEditor = CodeMirror.fromTextArea(document.getElementById('code-output'), {
+            mode: 'htmlmixed',
+            theme: 'dracula',
+            lineNumbers: true,
+            lineWrapping: true,
+            readOnly: true
+        });
+
+        // Function to clean and beautify HTML code
+        function cleanCode() {
+            var code = inputEditor.getValue();
+            var cleanedCode = html_beautify(code, {
+                indent_size: 4,
+                wrap_line_length: 80,
+                preserve_newlines: true
+            });
+            outputEditor.setValue(cleanedCode);
+        }
+
+        // Function to minify HTML code
+        function minifyCode() {
+            var code = inputEditor.getValue();
+            var minifiedCode = html_beautify(code, {
+                indent_size: 0,
+                wrap_line_length: 0,
+                preserve_newlines: false,
+                max_preserve_newlines: 0
+            }).replace(/\n\s*/g, '');
+            outputEditor.setValue(minifiedCode);
+        }
+
+        // Function to remove unused functions from HTML code
+        function removeUnusedFunctions() {
+            var code = inputEditor.getValue();
+            var usedFunctions = [];
+            var functionRegex = /function\s+([a-zA-Z_$][0-9a-zA-Z_$]*)\s*\(/g;
+            var match;
+
+            // Find all function definitions
+            var functionDefinitions = [];
+            while ((match = functionRegex.exec(code)) !== null) {
+                functionDefinitions.push(match[1]);
+            }
+
+            // Find all function calls
+            functionDefinitions.forEach(function (functionName) {
+                var callRegex = new RegExp('\\b' + functionName + '\\b', 'g');
+                if (code.match(callRegex).length > 1) { // If function is called at least once
+                    usedFunctions.push(functionName);
+                }
+            });
+
+            // Remove unused functions
+            functionDefinitions.forEach(function (functionName) {
+                if (!usedFunctions.includes(functionName)) {
+                    var removeRegex = new RegExp('function\\s+' + functionName + '\\s*\\([^)]*\\)\\s*{[^}]*}', 'g');
+                    code = code.replace(removeRegex, '');
+                }
+            });
+
+            outputEditor.setValue(code);
+        }
+
+        // Function to remove unused CSS rules from HTML code
+        function removeUnusedCSS() {
+            var code = inputEditor.getValue();
+            var doc = new DOMParser().parseFromString(code, 'text/html');
+            var styles = Array.from(doc.querySelectorAll('style'));
+            var usedCSS = '';
+
+            styles.forEach(style => {
+                var cssRules = style.sheet.cssRules;
+                for (var i = 0; i < cssRules.length; i++) {
+                    var rule = cssRules[i];
+                    if (rule.selectorText) {
+                        var elements = doc.querySelectorAll(rule.selectorText);
+                        if (elements.length > 0) {
+                            usedCSS += rule.cssText;
+                        }
+                    }
+                }
+            });
+
+            // Replace the style content with used CSS
+            styles.forEach(style => {
+                style.textContent = usedCSS;
+            });
+
+            var cleanedCode = new XMLSerializer().serializeToString(doc);
+            outputEditor.setValue(cleanedCode);
+        }
+
+        // Add event listener to the clean button
+        document.getElementById('clean-button').addEventListener('click', cleanCode);
+
+        // Add event listener to the minify button
+        document.getElementById('minify-button').addEventListener('click', minifyCode);
+
+        // Add event listener to the remove unused functions button
+        document.getElementById('remove-unused-functions-button').addEventListener('click', removeUnusedFunctions);
+
+        // Add event listener to the remove unused CSS button
+        document.getElementById('remove-unused-css-button').addEventListener('click', removeUnusedCSS);
+
+        // Ensure editors are resized to fill the available space
+        function resizeEditors() {
+            var editorHeight = window.innerHeight - document.querySelector('h1').offsetHeight - document.querySelector('.button-container').offsetHeight - 60; // 60px for padding
+            inputEditor.setSize('100%', editorHeight / 2);
+            outputEditor.setSize('100%', editorHeight / 2);
+        }
+
+        window.addEventListener('resize', resizeEditors);
+        resizeEditors();
+        function copy() {
+            code-output.select()
+            document.execCommand('copy')
+        }
+    </script>
+</body>
+
+</html>
